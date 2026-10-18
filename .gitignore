@@ -1,0 +1,18 @@
+# Your real keys live in config.py. NEVER commit it.
+config.py
+
+# Local database (contains users' hashed passwords) and the generated login secret
+data/db.json
+data/db.json.tmp
+data/secret_key.txt
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+# Editor / OS files
+.DS_Store
+.vscode/
+.idea/

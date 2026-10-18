@@ -1,0 +1,232 @@
+{# 
+  index.html - the one page of the website.
+  Flask fills in the {{ ... }} and {% ... %} parts (see home() in app.py).
+  All the interactive stuff (tabs, forms, maps) lives in static/js/app.js and static/js/map.js.
+#}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Rowan Commuter Parking</title>
+    <meta name="description" content="Pick your arrival day and time and see which commuter parking lot is most likely to have a spot.">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<!-- ============================ HEADER ============================ -->
+<header class="site-header header">
+    <div class="header-inner">
+        <div class="brand">
+            <p class="brand-school">Rowan University</p>
+            <h1>Commuter Parking</h1>
+            <p class="brand-tagline">A better start to your day. Find your lot, plan your week, get to class.</p>
+        </div>
+
+        <!-- Login / Create Account buttons (or the user's name once logged in).
+             js/app.js fills this in. -->
+        <nav class="auth-area" id="authArea" aria-label="Account"></nav>
+    </div>
+</header>
+
+<!-- ============================ MAIN ============================= -->
+<main class="layout content">
+
+    <!-- LEFT PANEL: two tabs -->
+    <section class="side left-panel" aria-label="Parking planner">
+
+        <div class="tabs" role="tablist" aria-label="Planner sections">
+            <button class="tab is-active" role="tab" id="tabFind" aria-controls="panelFind" aria-selected="true" type="button">Find Parking</button>
+            <button class="tab" role="tab" id="tabWeek" aria-controls="panelWeek" aria-selected="false" type="button">My Week &middot; Mon&ndash;Fri</button>
+        </div>
+
+        <!-- ---------- Tab 1: Find Parking ---------- -->
+        <div class="panel" id="panelFind" role="tabpanel" aria-labelledby="tabFind">
+            <h2>Where should you park?</h2>
+            <p class="hint">Choose your arrival day and time to compare the estimated chance of finding a spot in each commuter lot.</p>
+
+            <form id="findForm" novalidate>
+                <div class="field-row">
+                    <div class="field">
+                        <label for="daySelect">Day of week</label>
+                        <select id="daySelect" name="day" required>
+                            {% for day in weekdays %}
+                                <option value="{{ day }}">{{ day }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label for="timeSelect">Arrival time</label>
+                        <select id="timeSelect" name="time" required>
+                            {% for time in times %}
+                                <option value="{{ time }}"{% if time == '9:00 AM' %} selected{% endif %}>{{ time }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="classInput">Class / reminder <span class="optional">(optional)</span></label>
+                    <input type="text" id="classInput" name="className" maxlength="60" placeholder="e.g. Software Engineering" autocomplete="off">
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block" id="findButton">Find Best Parking</button>
+            </form>
+
+            <p class="form-error" id="findError" role="alert" hidden></p>
+
+            <!-- The recommendation shows up here after the user clicks the button -->
+            <div id="result" aria-live="polite"></div>
+        </div>
+
+        <!-- ---------- Tab 2: My Week ---------- -->
+        <div class="panel" id="panelWeek" role="tabpanel" aria-labelledby="tabWeek" hidden>
+            <h2>Your week, mapped out.</h2>
+            <p class="hint">One saved arrival and parking lot per weekday. Saving again replaces that day's plan.</p>
+            <div id="weekList"></div>
+        </div>
+    </section>
+
+    <!-- RIGHT PANEL: Rowan's campus map, or the same lots on Google Maps -->
+    <section class="map-panel" aria-label="Campus parking map">
+
+        <div class="map-toolbar">
+            <div class="view-switch" role="group" aria-label="Choose a map">
+                <button type="button" class="view-button is-active" id="viewCampus" aria-pressed="true">Campus Map</button>
+                <button type="button" class="view-button" id="viewGoogle" aria-pressed="false">Google Maps</button>
+            </div>
+
+            <!-- Legend: the dots change meaning once a search has been made -->
+            <ul class="legend" aria-label="Map key">
+                <li><i class="key key-lot"></i>Commuter lot</li>
+                <li><i class="key key-selected"></i>Selected</li>
+                <li class="legend-chances" id="chanceLegend" hidden>
+                    <i class="key key-good"></i>70%+
+                    <i class="key key-ok"></i>40&ndash;69%
+                    <i class="key key-low"></i>under 40%
+                </li>
+            </ul>
+        </div>
+
+        <div class="map-area">
+
+            <!-- View 1: Rowan's own campus and parking map (a picture we can pan and zoom) -->
+            <div class="map-view" id="campusView">
+                <div class="campus-viewport" id="campusViewport">
+                    <div class="campus-stage" id="campusStage">
+                        <img src="{{ url_for('static', filename='img/rowan-campus-parking-map.webp') }}" width="2200" height="1283"
+                             alt="Rowan University campus map showing buildings, roads and parking lots" draggable="false">
+                        <!-- the lot pins get added here by js/map.js -->
+                    </div>
+                </div>
+
+                <div class="zoom-buttons">
+                    <button type="button" id="zoomIn" aria-label="Zoom in">+</button>
+                    <button type="button" id="zoomOut" aria-label="Zoom out">&minus;</button>
+                    <button type="button" id="zoomReset" aria-label="Show the whole map">&#8634;</button>
+                </div>
+            </div>
+
+            <!-- View 2: Google Maps (loaded only when this view is opened) -->
+            <div class="map-view" id="googleView" hidden>
+                <div class="map-note" id="googleNote" hidden>
+                    The lot pins aren't on this map yet because the map hasn't been lined up with
+                    Google Maps. See "Lining up the Google Maps view" in the README.
+                </div>
+                <div id="googleMap" class="google-map"></div>
+            </div>
+        </div>
+
+        <p class="map-footer">
+            Campus map &copy; Rowan University (2025&ndash;2026 Campus &amp; Parking Map).
+            Student project prototype: availability percentages are sample estimates, not live space counts.
+            A valid permit and posted lot rules apply.
+        </p>
+    </section>
+</main>
+
+
+<!-- ======================== LOGIN DIALOG ========================= -->
+<dialog id="loginDialog" aria-labelledby="loginTitle">
+    <form id="loginForm" class="dialog-form" novalidate>
+        <button type="button" class="dialog-close" data-close aria-label="Close">&times;</button>
+        <h2 id="loginTitle">Log in</h2>
+        <p class="hint">Log in to save your weekly parking plan.</p>
+
+        <div class="field">
+            <label for="loginEmail">Email</label>
+            <input type="email" id="loginEmail" autocomplete="email" required>
+        </div>
+        <div class="field">
+            <label for="loginPassword">Password</label>
+            <input type="password" id="loginPassword" autocomplete="current-password" required>
+        </div>
+
+        <p class="form-error" id="loginError" role="alert" hidden></p>
+        <button type="submit" class="btn btn-primary btn-block">Log In</button>
+        <p class="switch-text">New here? <button type="button" class="link-button" data-switch="register">Create an account</button></p>
+    </form>
+</dialog>
+
+<!-- ====================== CREATE ACCOUNT DIALOG ================== -->
+<dialog id="registerDialog" aria-labelledby="registerTitle">
+    <form id="registerForm" class="dialog-form" novalidate>
+        <button type="button" class="dialog-close" data-close aria-label="Close">&times;</button>
+        <h2 id="registerTitle">Create account</h2>
+        <p class="hint">It only takes a moment.</p>
+
+        <div class="field-row">
+            <div class="field">
+                <label for="regFirst">First name</label>
+                <input type="text" id="regFirst" maxlength="50" autocomplete="given-name" required>
+            </div>
+            <div class="field">
+                <label for="regLast">Last name</label>
+                <input type="text" id="regLast" maxlength="50" autocomplete="family-name" required>
+            </div>
+        </div>
+        <div class="field">
+            <label for="regEmail">Email</label>
+            <input type="email" id="regEmail" autocomplete="email" placeholder="you@students.rowan.edu" required>
+        </div>
+        <div class="field">
+            <label for="regSemester">Semester</label>
+            <select id="regSemester" required>
+                {% for semester in semesters %}
+                    <option value="{{ semester }}">{{ semester }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="field-row">
+            <div class="field">
+                <label for="regPassword">Password</label>
+                <input type="password" id="regPassword" minlength="8" maxlength="72" autocomplete="new-password" required>
+            </div>
+            <div class="field">
+                <label for="regConfirm">Confirm password</label>
+                <input type="password" id="regConfirm" minlength="8" maxlength="72" autocomplete="new-password" required>
+            </div>
+        </div>
+        <p class="field-note">Use at least 8 characters.</p>
+
+        <p class="form-error" id="registerError" role="alert" hidden></p>
+        <button type="submit" class="btn btn-primary btn-block">Create Account</button>
+        <p class="switch-text">Already have an account? <button type="button" class="link-button" data-switch="login">Log in</button></p>
+    </form>
+</dialog>
+
+<!-- Small message bar at the bottom of the screen -->
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<noscript><p class="noscript">This site needs JavaScript turned on to work.</p></noscript>
+
+<script>
+    // Settings from Flask (app.py), read by js/app.js and js/map.js
+    window.APP_SETTINGS = {{ settings|tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/api.js') }}"></script>
+<script src="{{ url_for('static', filename='js/map.js') }}"></script>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
