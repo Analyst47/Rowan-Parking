@@ -1,8 +1,9 @@
 """
 parking_logic.py
 
-The "brain" of the app: helpers for times, and the code that decides which
-lot is the best choice for a given day and arrival time.
+Small helpers shared by the rest of the back end: working with times like
+"9:30 AM", finding a lot, and looking up a lot's chance of having a spot.
+The code that actually picks the best lot is in engine.py.
 """
 
 import re
@@ -11,7 +12,7 @@ import re
 def time_to_minutes(text):
     """
     Turn a time like "9:30 AM" into minutes after midnight (570).
-    Returns None if the text isn't a valid time between 6:00 AM and 8:00 PM.
+    Returns None if the text isn't a valid time between 6:00 AM and 9:00 PM.
     """
     if not isinstance(text, str):
         return None
@@ -25,15 +26,16 @@ def time_to_minutes(text):
         hour += 12
     minutes = hour * 60 + int(match.group(2))
 
-    # Only allow times that make sense for coming to campus
-    if minutes < 6 * 60 or minutes > 20 * 60:
+    # Only allow times that make sense for being on campus
+    if minutes < 6 * 60 or minutes > 21 * 60:
         return None
     return minutes
 
 
 def minutes_to_label(minutes):
     """Turn minutes after midnight (570) back into a label ("9:30 AM")."""
-    hour24 = minutes // 60
+    minutes = int(round(minutes))
+    hour24 = (minutes // 60) % 24
     minute = minutes % 60
     suffix = "PM" if hour24 >= 12 else "AM"
     hour12 = 12 if hour24 % 12 == 0 else hour24 % 12
@@ -50,26 +52,34 @@ def find_lot(db, lot_id):
 
 def probability_for(lot, day, minutes):
     """
-    Get the chance (0-100) of finding a spot in one lot.
+    The chance (0-100) of finding a spot in one lot on a day at a time.
 
-    Our data has one entry per hour, but the user might pick 9:30 AM,
-    so we use the entry whose time is closest to what they picked.
+    The lot's data has one entry per hour (7 AM, 8 AM, ...). For a time in
+    between, like 8:40, we blend the two entries on either side of it. Times
+    before the first entry or after the last one use the nearest entry.
+    Returns None if the lot has no data for that day.
     """
-    best_probability = None
-    best_gap = None
-
+    points = []
     for slot in lot["availability"]:
         if slot["day"] != day:
             continue
         slot_minutes = time_to_minutes(slot["time"])
-        if slot_minutes is None:
-            continue
+        if slot_minutes is not None:
+            points.append((slot_minutes, float(slot["probability"])))
+    if not points:
+        return None
+    points.sort()
 
-        gap = abs(slot_minutes - minutes)
-        if best_gap is None or gap < best_gap:
-            best_gap = gap
-            best_probability = int(slot["probability"])
-    return best_probability
+    if minutes <= points[0][0]:
+        return round(points[0][1])
+    if minutes >= points[-1][0]:
+        return round(points[-1][1])
+
+    for (time_a, chance_a), (time_b, chance_b) in zip(points, points[1:]):
+        if time_a <= minutes <= time_b:
+            share = (minutes - time_a) / (time_b - time_a)
+            return round(chance_a + (chance_b - chance_a) * share)
+    return None
 
 
 def lot_summary(lot):
@@ -83,21 +93,3 @@ def lot_summary(lot):
         "latitude": lot["latitude"],
         "longitude": lot["longitude"],
     }
-
-
-def rank_lots(db, day, minutes):
-    """
-    Rank all the lots for a day and time, best chance first.
-    Returns a list of lot_summary() details plus the probability.
-    """
-    ranking = []
-
-    for lot in db["parkingLots"]:
-        probability = probability_for(lot, day, minutes)
-        if probability is None:
-            continue    # no data for this lot at that time, skip it
-        ranking.append({**lot_summary(lot), "probability": probability})
-
-    # Sort highest probability first. If two lots tie, keep them in name order.
-    ranking.sort(key=lambda lot: (-lot["probability"], lot["lotName"]))
-    return ranking

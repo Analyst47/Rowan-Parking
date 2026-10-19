@@ -7,7 +7,7 @@ Then open:     http://localhost:5000
 This file does three things:
   1. creates the Flask app and sets up the login cookie
   2. shows the one page of the site (templates/index.html)
-  3. plugs in the account and parking API routes from the api/ folder
+  3. plugs in the account, parking and schedule API routes from the api/ folder
 """
 
 import secrets
@@ -18,8 +18,8 @@ from werkzeug.exceptions import HTTPException
 
 from api.account import account
 from api.parking import parking
+from api.schedule import schedule
 from helpers import ApiError
-from parking_logic import minutes_to_label
 from settings import SEMESTERS, WEEKDAYS, get_setting
 
 DATA_FOLDER = Path(__file__).parent / "data"
@@ -54,20 +54,17 @@ app.config.update(
 
 app.register_blueprint(account)
 app.register_blueprint(parking)
+app.register_blueprint(schedule)
 
 
 @app.get("/")
 def home():
-    # every 30 minutes from 7:00 AM to 6:00 PM, for the arrival time dropdown
-    times = [minutes_to_label(m) for m in range(7 * 60, 18 * 60 + 1, 30)]
-
     # settings the JavaScript needs
     client_settings = {
         "mapsKey": get_setting("GOOGLE_MAPS_KEY", ""),
         "weekdays": WEEKDAYS,
     }
-    return render_template("index.html", weekdays=WEEKDAYS, semesters=SEMESTERS,
-                           times=times, settings=client_settings)
+    return render_template("index.html", weekdays=WEEKDAYS, semesters=SEMESTERS, settings=client_settings)
 
 
 # ---------------------------------------------------------------------------

@@ -896,3 +896,228 @@ dialog::backdrop {
         animation: none !important;
     }
 }
+
+
+/* ==========================================================================
+   Schedule builder, results and the class building marker
+   ========================================================================== */
+
+/* --- One row of the schedule form --- */
+.class-row {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    background: var(--white);
+}
+.class-row-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+.day-chips {
+    display: flex;
+    gap: 4px;
+}
+.day-chip {
+    min-width: 36px;
+    padding: 5px 6px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: var(--white);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--muted);
+    cursor: pointer;
+}
+.day-chip.is-on {
+    border-color: var(--brown);
+    background: var(--brown);
+    color: var(--white);
+}
+.row-remove {
+    width: 28px;
+    height: 28px;
+    border: 0;
+    border-radius: 50%;
+    background: none;
+    font-size: 20px;
+    line-height: 1;
+    color: var(--muted);
+    cursor: pointer;
+}
+.row-remove:hover {
+    background: var(--cream);
+    color: var(--low);
+}
+.row-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 4px 0 12px;
+}
+.needs-attention {
+    border-color: var(--low);
+    box-shadow: 0 0 0 2px rgba(179, 38, 30, 0.25);
+}
+.import-note,
+.import-warning {
+    margin: 0 0 6px;
+    font-size: 12.5px;
+    line-height: 1.4;
+}
+.import-note { color: var(--good); }
+.import-warning { color: var(--ok); }
+
+/* --- Results --- */
+.result-heading {
+    margin: 18px 0 8px;
+    font-size: 20px;
+    color: var(--brown);
+}
+.plan-card {
+    margin-bottom: 12px;
+    padding: 14px 16px;
+    border: 1px solid var(--line);
+    border-left: 5px solid var(--line);
+    background: var(--cream);
+}
+.plan-card.plan-good { border-left-color: var(--good); }
+.plan-card.plan-ok   { border-left-color: var(--ok); }
+.plan-card.plan-low  { border-left-color: var(--low); }
+.plan-card.is-selected {
+    box-shadow: 0 0 0 2px var(--gold);
+}
+.plan-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+}
+.plan-class {
+    margin: 2px 0 0;
+    font-size: 13px;
+    color: var(--muted);
+}
+.plan-lot {
+    margin: 4px 0 2px;
+    font-size: 24px;
+    color: var(--brown);
+}
+.plan-facts {
+    margin: 4px 0;
+    font-size: 13.5px;
+}
+.plan-park-by {
+    margin: 6px 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--brown);
+}
+.plan-why {
+    margin: 8px 0;
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--ink);
+}
+.plan-tip {
+    margin: 8px 0;
+    padding: 6px 10px;
+    border-left: 3px solid var(--gold);
+    background: var(--white);
+    font-size: 12.5px;
+    color: var(--muted);
+}
+.option-list {
+    display: grid;
+    gap: 4px;
+    margin: 10px 0 0;
+}
+.option-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 10px;
+    align-items: center;
+    padding: 6px 10px;
+    border: 1px solid var(--line);
+    background: var(--white);
+    font-size: 13px;
+    text-align: left;
+    cursor: pointer;
+}
+.option-row:hover { border-color: var(--brown); }
+.option-row.is-selected {
+    border-color: var(--brown);
+    background: #fff8d6;
+}
+.option-name { font-weight: 700; }
+.option-walk { color: var(--muted); }
+.option-chance { font-weight: 700; }
+.option-chance.chance-good { color: var(--good); }
+.option-chance.chance-ok   { color: var(--ok); }
+.option-chance.chance-low  { color: var(--low); }
+
+/* My Week cards that have a saved plan get a colored edge */
+.has-plan.plan-good { border-left-color: var(--good); }
+.has-plan.plan-ok   { border-left-color: var(--ok); }
+.has-plan.plan-low  { border-left-color: var(--low); }
+
+/* --- The class building marker --- */
+.building-pin {
+    position: relative;
+    display: block;
+    width: 14px;
+    height: 14px;
+}
+.campus-stage .building-pin {
+    position: absolute;
+    left: var(--x);
+    top: var(--y);
+    transform: translate(-50%, -50%) scale(calc(1 / var(--zoom, 1)));
+    z-index: 4;
+    pointer-events: none;
+}
+.building-pin::before {
+    content: '';
+    display: block;
+    width: 14px;
+    height: 14px;
+    box-sizing: border-box;
+    border: 2px solid var(--white);
+    border-radius: 50%;
+    background: var(--red);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+}
+.building-pin-label {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-top: 3px;
+    padding: 1px 6px;
+    border-radius: 3px;
+    background: var(--red);
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+    color: var(--white);
+}
+.key-building { background: var(--red); border-radius: 50%; }
+
+/* result lists: no bullets, and the day label sits plainly in the header */
+.option-list { list-style: none; padding: 0; }
+.plan-header {
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: none;
+    text-align: left;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+}
+.plan-header h4 { margin: 0; font-family: var(--font-heading); font-size: 17px; color: var(--brown); }

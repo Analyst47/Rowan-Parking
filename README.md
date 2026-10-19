@@ -1,13 +1,16 @@
 # Rowan Commuter Parking
 
-A capstone project that helps commuter students decide where to park. Pick the day and
-time you arrive on campus and the site ranks Rowan's commuter lots by your estimated
-chance of finding a spot, and shows them on **Rowan's own campus parking map** or on
-**Google Maps**. Logged-in students can save one parking plan for each weekday
-(Monday to Friday).
+A capstone project that helps commuter students decide where to park. A student builds
+their class schedule (picking classes, buildings and start times from dropdowns, or
+uploading a `.csv` / `.ics` file) and the site recommends a commuter lot **for each day**.
+The recommendation weighs how far the lot is from the class building against the chance
+of finding a space at the time the student will actually arrive. Everything shows on
+**Rowan's own campus parking map** or on **Google Maps**. Logged-in students can save
+their week (Monday to Friday). The site gives no turn-by-turn directions.
 
-> **Note:** the availability percentages are **sample estimates** made by a simple formula
-> (see `seed.py`). They are not live space counts.
+> **Note:** the availability percentages are **modeled estimates** (see `seed.py`), not
+> live space counts. The course list is a **sample** and its buildings are guesses
+> (the student can change the building). Walking times are approximate.
 
 ## What's in it
 
@@ -71,27 +74,18 @@ enabled, billing isn't set up, or the referrer list doesn't match the address in
 
 ### Lining up the Google Maps view
 
-Rowan's map is a picture, so the app can't know where each lot really is on Google Maps.
-We fix that with a few **anchors**: landmarks that appear on both Rowan's map and Google Maps.
-You tell the app the real latitude/longitude of the landmarks, and it works out the
-position of every lot from them. Takes about five minutes:
+Rowan's map is a picture, so the app has to work out where each lot is on Google Maps.
+It does this by itself: the first time the Google view opens, the browser asks Google
+where each campus building is (the **Geocoding API**), compares that with the building's
+spot on Rowan's map, and works out a formula. The result is saved in the browser. Pins can be
+about half a block off. To use this, enable the **Geocoding API** as well as the
+**Maps JavaScript API** for your key (step 3 above, and add it under API restrictions in step 5).
 
-1. Open <https://www.google.com/maps> and switch to **Satellite** (bottom-left).
-2. Find each landmark listed in `config_example.py` (`CAMPUS_ANCHORS`):
-   Richard Wacker Stadium, Chamberlain Student Center, the baseball field and the Enterprise Center.
-3. **Right-click the exact spot** (for example the middle of the football field). The first line
-   of the menu shows two numbers like `39.7123, -75.1201`. Click it to copy.
-4. Put them in your `config.py` as `lat` and `lng` for that anchor:
-   ```python
-   {"name": "Richard Wacker Stadium (middle of the field)", "x": 15.0, "y": 18.0,
-    "lat": 39.7123, "lng": -75.1201},
-   ```
-   Leave `x` and `y` alone. They are the landmark's position on the campus map picture.
-5. You need at least 3 anchors; all 4 is better. Reload the page and open the Google Maps view.
-   The pins should now sit on the lots. If one looks off, re-check the anchor that is
-   closest to it. You can add more anchors with the same `x` / `y` / `lat` / `lng` format.
-
-The lot positions update automatically whenever you change the anchors.
+**Optional, more exact:** set `CAMPUS_ANCHORS` in `config.py` (see `config_example.py`).
+Find each landmark on <https://www.google.com/maps> in Satellite view, right-click the exact
+spot, click the two numbers to copy them, and put them in as `lat` and `lng` (leave `x` and
+`y` alone). With at least 3 anchors the server works out every position and the browser
+doesn't need to ask Google.
 
 ### Use JSONBin instead of a local file
 
@@ -110,7 +104,9 @@ The lot positions update automatically whenever you change the anchors.
 ## Data format
 
 Everything is stored in one JSON object, shaped like the examples in the assignment email.
-Each lot also has `shortName`, `mapX` and `mapY` (its position on the campus map picture, in percent).
+Each lot also has `shortName`, `mapX` and `mapY` (its position on the campus map picture, in percent),
+and `modelVersion` records which version of the sample data was generated (when it changes,
+the lots are regenerated and the users are kept). Saved plans can also hold `buildingId` and `classStart`.
 
 ```json
 {
@@ -144,12 +140,12 @@ Each lot also has `shortName`, `mapX` and `mapY` (its position on the campus map
 }
 ```
 
-`latitude` and `longitude` are `null` until the anchors are filled in.
+`latitude` and `longitude` are `null` unless the anchors are set in `config.py`.
 
 ## API
 
 All answers are JSON: `{ "ok": true, ... }` or `{ "ok": false, "error": "message" }`.
-POST bodies must be sent as `application/json`.
+POST bodies must be sent as `application/json` (except the file upload).
 
 | Method | URL | Body / query | Needs login |
 |--------|-----|--------------|:-----------:|
@@ -157,21 +153,49 @@ POST bodies must be sent as `application/json`.
 | POST | `/api/account/login` | `email, password` | no |
 | POST | `/api/account/logout` | | no |
 | GET | `/api/account/me` | | no |
+| GET | `/api/schedule/options` | | no |
+| POST | `/api/schedule/import` | multipart `file` (.csv or .ics) | no |
+| POST | `/api/schedule/plan` | `classes: [{days, className, buildingId, startTime}], minutesEarly` | no |
 | GET | `/api/parking/lots` | | no |
-| GET | `/api/parking/recommend?day=Monday&time=9:00 AM` | | no |
 | GET | `/api/parking/schedule` | | yes |
-| POST | `/api/parking/save` | `day, arrivalTime, className, parkingLotId` | yes |
+| POST | `/api/parking/save` | `plans: [{day, className, arrivalTime, parkingLotId, buildingId, classStart}]` | yes |
 | POST | `/api/parking/remove` | `day` | yes |
+
+## Uploading a schedule
+
+Click **Upload schedule** and choose a file. The classes it finds are put into the form so
+the student can check and fix them before getting a result.
+
+- **CSV:** columns `Days, Class, Building, Start`, for example `MW,Web Development,Engineering Hall,9:30 AM`.
+  Days can be `MW`, `TR`, `Tue/Thu`, `MWF` and so on. A template is in `static/schedule_template.csv`.
+- **ICS:** a calendar export (Google Calendar, Outlook, Apple). We read `SUMMARY`, `LOCATION`,
+  the start time and weekly repeat days. Building names are matched loosely.
+- Files are limited to 200 KB and 40 classes. Nothing is stored on the server.
 
 ## How the recommendation works
 
-For the chosen day and time, the back end looks up each lot's estimated probability
-(using the availability entry closest to the chosen time), sorts the lots from highest
-to lowest, and returns the list. The top lot is the recommendation.
-The code is in `parking_logic.py`.
+The code is in `engine.py`. For every lot it estimates how many minutes the lot would cost
+the student, and the lowest wins:
 
-The sample availability numbers come from `seed.py`. Lots closer to the middle of
-campus fill up earlier and harder than lots on the edge, and Fridays are quieter.
+```
+cost = walk to the class building
+     + half of the walk back to the car
+     + (chance the lot is full) x 12 minutes lost finding another place
+```
+
+The chance depends on *when* the student arrives, which depends on the lot:
+`park-by time = class start - minutes early - walk - 3 minutes to park`.
+So a faraway lot is checked at an earlier, emptier time. The chance is read from the lot's
+hourly `availability` data (smoothly between hours). If the closest lot is not the pick, the
+result says why. If even the best lot is tight, it suggests arriving earlier. When a day has
+several classes, the earliest decides arrival time and the last decides the walk back.
+
+Walking distance comes from positions on Rowan's map (`campus_data.py`): about 1.9 m per map
+point (an estimate) x 1.25 for paths, at 80 m per minute.
+
+**What is real and what isn't:** building and lot positions come from Rowan's map. The
+chances are generated by `seed.py` from where the lots are, how big they are (estimated)
+and the time of day. Replace the `availability` data with real counts and the engine uses them unchanged.
 
 ## Project structure
 
@@ -181,16 +205,22 @@ rowan-parking/
 ├── settings.py             reads config.py (or environment variables)
 ├── config_example.py       copy to config.py and add your keys + anchors
 ├── helpers.py              small helpers for the API (errors, login check)
-├── parking_logic.py        time helpers and the ranking code
-├── campus.py               map picture position -> latitude/longitude
-├── seed.py                 Rowan's commuter lots + sample availability
+├── engine.py               the recommendation engine
+├── parking_logic.py        time helpers, chance lookup
+├── campus_data.py          buildings, lots, walking distance (from Rowan's map)
+├── campus.py               map picture position -> latitude/longitude (anchors)
+├── courses.py              the sample class list for the dropdown
+├── schedule_import.py      reads uploaded .csv / .ics files
+├── seed.py                 commuter lots + modeled availability
 ├── storage.py              local file storage and JSONBin storage
 ├── requirements.txt
 ├── api/
 │   ├── account.py          register, login, logout, me
-│   └── parking.py          lots, recommend, schedule, save, remove
+│   ├── schedule.py         dropdown options, upload, plan
+│   └── parking.py          lots, saved week
 ├── templates/index.html    the page
 ├── static/
+│   ├── schedule_template.csv   example upload file
 │   ├── css/style.css
 │   ├── img/rowan-campus-parking-map.webp   Rowan's campus map (cropped from the PDF)
 │   └── js/
@@ -215,7 +245,8 @@ belongs to Rowan University. It is used here for a class project.
 
 ## Known limits
 
-- Availability is sample data, not live.
+- Availability is modeled, not live. Lot sizes are estimated. The course list is a sample.
+- The Google view was written against Google's documented APIs but needs a real key to try; check the pins on your campus.
 - The whole data object is read and rewritten on each save. A lock keeps one server process safe, but several servers sharing one JSONBin bin could overwrite each other. This is fine for a class project.
 - There is no password reset or email verification.
 

@@ -21,7 +21,7 @@ from pathlib import Path
 import requests
 
 from campus import map_to_latlng
-from seed import make_parking_lots, make_seed_data
+from seed import MODEL_VERSION, make_parking_lots, make_seed_data
 from settings import get_setting
 
 DATA_FOLDER = Path(__file__).parent / "data"
@@ -37,7 +37,8 @@ def fix_database_shape(db):
     Make sure the database has the shape we expect. Returns (db, changed).
 
      - If the lots are missing (brand new database) we fill in the sample lots.
-     - If the lots are from an older version of the app (no map positions) we replace them.
+     - If the lots were made by an older version of the app (an older "modelVersion")
+       we make them again with the current model.
      - If the anchors in config.py changed, we update every lot's latitude/longitude.
 
     We never touch the users list, so nobody's account gets wiped.
@@ -49,9 +50,11 @@ def fix_database_shape(db):
         db["users"] = []
 
     lots = db.get("parkingLots")
-    lots_are_current = isinstance(lots, list) and len(lots) > 0 and "mapX" in lots[0]
+    lots_are_current = (db.get("modelVersion") == MODEL_VERSION
+                        and isinstance(lots, list) and len(lots) > 0)
     if not lots_are_current:
         db["parkingLots"] = make_parking_lots()
+        db["modelVersion"] = MODEL_VERSION
         return db, True
 
     # keep the GPS positions in step with the anchors in config.py

@@ -1,7 +1,7 @@
 /**
  * api.js
  *
- * All the calls from the browser to our PHP back end live here, so the rest of
+ * All the calls from the browser to our Python back end live here, so the rest of
  * the code can just write things like  Api.login(email, password).
  */
 
@@ -20,7 +20,7 @@ async function sendRequest(url, options = {}) {
     try {
         data = await response.json();
     } catch (err) {
-        // The server didn't send JSON (maybe a PHP error). We handle it below.
+        // The server didn't send JSON (maybe a server error). We handle it below.
     }
 
     if (!response.ok || !data || data.ok === false) {
@@ -45,15 +45,22 @@ const Api = {
     login:    (email, password) => postJson('/api/account/login', { email, password }),
     logout:   ()     => postJson('/api/account/logout'),
 
-    // ---- parking ----
-    lots: () => sendRequest('/api/parking/lots'),
+    // ---- parking lots and the saved week ----
+    lots:       ()      => sendRequest('/api/parking/lots'),
+    schedule:   ()      => sendRequest('/api/parking/schedule'),
+    savePlans:  (plans) => postJson('/api/parking/save', { plans }),
+    removePlan: (day)   => postJson('/api/parking/remove', { day }),
 
-    recommend: (day, time) => {
-        const query = new URLSearchParams({ day: day, time: time });
-        return sendRequest('/api/parking/recommend?' + query.toString());
+    // ---- class schedule and recommendations ----
+    options: () => sendRequest('/api/schedule/options'),
+
+    /** Upload a .csv or .ics file. The server sends back the classes it found. */
+    importSchedule: (file) => {
+        const form = new FormData();
+        form.append('file', file);
+        return sendRequest('/api/schedule/import', { method: 'POST', body: form });
     },
 
-    schedule:  ()     => sendRequest('/api/parking/schedule'),
-    savePlan:  (plan) => postJson('/api/parking/save', plan),
-    removePlan: (day) => postJson('/api/parking/remove', { day }),
+    /** Ask for the best lot for each day. classes is the list from the class boxes. */
+    plan: (classes, minutesEarly) => postJson('/api/schedule/plan', { classes, minutesEarly }),
 };

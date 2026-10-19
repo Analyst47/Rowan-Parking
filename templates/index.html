@@ -40,35 +40,28 @@
             <button class="tab" role="tab" id="tabWeek" aria-controls="panelWeek" aria-selected="false" type="button">My Week &middot; Mon&ndash;Fri</button>
         </div>
 
-        <!-- ---------- Tab 1: Find Parking ---------- -->
+        <!-- ---------- Tab 1: Plan Parking ---------- -->
         <div class="panel" id="panelFind" role="tabpanel" aria-labelledby="tabFind">
             <h2>Where should you park?</h2>
-            <p class="hint">Choose your arrival day and time to compare the estimated chance of finding a spot in each commuter lot.</p>
+            <p class="hint">Add your classes and we will find the best lot for each day. We compare how far each
+                lot is from your building with how likely it is to have a space when you get there.</p>
 
-            <form id="findForm" novalidate>
-                <div class="field-row">
-                    <div class="field">
-                        <label for="daySelect">Day of week</label>
-                        <select id="daySelect" name="day" required>
-                            {% for day in weekdays %}
-                                <option value="{{ day }}">{{ day }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
+            <form id="planForm" novalidate>
+                <!-- one box for each class gets added here by js/app.js -->
+                <div id="classRows"></div>
 
-                    <div class="field">
-                        <label for="timeSelect">Arrival time</label>
-                        <select id="timeSelect" name="time" required>
-                            {% for time in times %}
-                                <option value="{{ time }}"{% if time == '9:00 AM' %} selected{% endif %}>{{ time }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
+                <div class="row-buttons">
+                    <button type="button" class="btn btn-small" id="addClass">+ Add a class</button>
+                    <button type="button" class="btn btn-small" id="uploadButton">Upload schedule</button>
+                    <input type="file" id="scheduleFile" accept=".csv,.ics,text/csv,text/calendar" hidden>
                 </div>
+                <p class="field-note">Upload a .csv file or a calendar (.ics) export.
+                    <a href="{{ url_for('static', filename='schedule_template.csv') }}" download>Download the CSV template</a></p>
+                <div id="importNotes"></div>
 
                 <div class="field">
-                    <label for="classInput">Class / reminder <span class="optional">(optional)</span></label>
-                    <input type="text" id="classInput" name="className" maxlength="60" placeholder="e.g. Software Engineering" autocomplete="off">
+                    <label for="earlySelect">I want to be at class</label>
+                    <select id="earlySelect" name="early"></select>
                 </div>
 
                 <button type="submit" class="btn btn-primary btn-block" id="findButton">Find Best Parking</button>
@@ -76,7 +69,7 @@
 
             <p class="form-error" id="findError" role="alert" hidden></p>
 
-            <!-- The recommendation shows up here after the user clicks the button -->
+            <!-- The recommendations show up here after the user clicks the button -->
             <div id="result" aria-live="polite"></div>
         </div>
 
@@ -101,6 +94,7 @@
             <ul class="legend" aria-label="Map key">
                 <li><i class="key key-lot"></i>Commuter lot</li>
                 <li><i class="key key-selected"></i>Selected</li>
+                <li class="legend-building" id="buildingLegend" hidden><i class="key key-building"></i>Your class</li>
                 <li class="legend-chances" id="chanceLegend" hidden>
                     <i class="key key-good"></i>70%+
                     <i class="key key-ok"></i>40&ndash;69%
@@ -130,17 +124,14 @@
 
             <!-- View 2: Google Maps (loaded only when this view is opened) -->
             <div class="map-view" id="googleView" hidden>
-                <div class="map-note" id="googleNote" hidden>
-                    The lot pins aren't on this map yet because the map hasn't been lined up with
-                    Google Maps. See "Lining up the Google Maps view" in the README.
-                </div>
+                <div class="map-note" id="googleNote" hidden></div>
                 <div id="googleMap" class="google-map"></div>
             </div>
         </div>
 
         <p class="map-footer">
             Campus map &copy; Rowan University (2025&ndash;2026 Campus &amp; Parking Map).
-            Student project prototype: availability percentages are sample estimates, not live space counts.
+            Student project prototype: chances are modeled estimates, not live space counts, and walking times are approximate.
             A valid permit and posted lot rules apply.
         </p>
     </section>
