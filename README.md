@@ -18,7 +18,7 @@ their week (Monday to Friday). The site gives no turn-by-turn directions.
 |------|------|-------|
 | Front end | HTML (Jinja template), CSS, vanilla JavaScript, Google Maps JS API | `templates/`, `static/` |
 | Back end | Python 3 + Flask (JSON API) | `app.py`, `api/`, and the other `.py` files |
-| Database | JSON, stored either in a local file or in a JSONBin bin | `storage.py`, `data/` |
+| Databases (two) | JSON: `users.json` and `parking_lots.json`, stored as local files or in two JSONBin bins | `storage.py`, `data/` |
 
 The page follows the layout from the assignment: a header with Login / Create Account,
 then two panels. The **left panel has two tabs** (*Find Parking* for data entry and
@@ -46,7 +46,7 @@ python app.py
 ```
 
 With the default settings (`STORAGE = "local"`) it works right away, including the
-Rowan campus map. The data is saved in `data/db.json`, which is created on the first request.
+Rowan campus map. The data is saved in two files, `data/users.json` and `data/parking_lots.json`, which are created on the first request.
 
 ## Setting up the Google Maps API
 
@@ -87,25 +87,27 @@ spot, click the two numbers to copy them, and put them in as `lat` and `lng` (le
 `y` alone). With at least 3 anchors the server works out every position and the browser
 doesn't need to ask Google.
 
-### Use JSONBin instead of a local file
+### Use JSONBin instead of local files
 
-1. Create a bin at [jsonbin.io](https://jsonbin.io) with this content (JSONBin does not allow an empty bin):
-   ```json
-   { "users": [] }
-   ```
+There are two databases, so you need two bins.
+
+1. Create two bins at [jsonbin.io](https://jsonbin.io). JSONBin does not allow an empty bin, so use:
+   - users bin: `{ "users": [] }`
+   - parking lots bin: `{ "parkingLots": [] }`
 2. In `config.py` set:
    ```python
    STORAGE = "jsonbin"
-   JSONBIN_BIN_ID = "YOUR_BIN_ID"
+   JSONBIN_USERS_BIN_ID = "YOUR_USERS_BIN_ID"
+   JSONBIN_LOTS_BIN_ID = "YOUR_LOTS_BIN_ID"
    JSONBIN_API_KEY = "YOUR_X_MASTER_KEY"
    ```
 3. The first request fills in the parking lots automatically.
 
 ## Data format
 
-Everything is stored in one JSON object, shaped like the examples in the assignment email.
+There are two databases, each its own JSON file, shaped like the examples in the assignment email. `users.json` holds `{ "users": [...] }` and `parking_lots.json` holds `{ "modelVersion": 2, "parkingLots": [...] }`. The code reads them together as one object, shown below, and saves them back into the two files. An older single `data/db.json` is split into the two files automatically the first time the app starts (and kept as `db.old.json`).
 Each lot also has `shortName`, `mapX` and `mapY` (its position on the campus map picture, in percent),
-and `modelVersion` records which version of the sample data was generated (when it changes,
+and `modelVersion` (stored in `parking_lots.json`) records which version of the sample data was generated (when it changes,
 the lots are regenerated and the users are kept). Saved plans can also hold `buildingId` and `classStart`.
 
 ```json
@@ -227,7 +229,7 @@ rowan-parking/
 │       ├── api.js          calls to the back end
 │       ├── map.js          campus map (pan/zoom/pins) and Google Maps
 │       └── app.js          tabs, forms, results, My Week
-└── data/                   db.json is created here (not committed)
+└── data/                   users.json and parking_lots.json are created here (not committed)
 ```
 
 ## Credits
@@ -238,7 +240,7 @@ belongs to Rowan University. It is used here for a class project.
 ## Security notes
 
 - Passwords are hashed with Werkzeug's `generate_password_hash()` and never sent back to the browser.
-- `config.py`, `data/db.json` and `data/secret_key.txt` are in `.gitignore`. Don't commit API keys.
+- `config.py`, `data/*.json` and `data/secret_key.txt` are in `.gitignore`. Don't commit API keys.
 - Restrict your Google Maps key to your site, since it is visible in the browser.
   Keep your JSONBin key private. It is only used on the server.
 - Only `static/` is served as files. The data and Python code are never reachable from the browser.
@@ -247,7 +249,7 @@ belongs to Rowan University. It is used here for a class project.
 
 - Availability is modeled, not live. Lot sizes are estimated. The course list is a sample.
 - The Google view was written against Google's documented APIs but needs a real key to try; check the pins on your campus.
-- The whole data object is read and rewritten on each save. A lock keeps one server process safe, but several servers sharing one JSONBin bin could overwrite each other. This is fine for a class project.
+- The whole data object is read and rewritten on each save. A lock keeps one server process safe, but several servers sharing the same JSONBin bins could overwrite each other. This is fine for a class project.
 - There is no password reset or email verification.
 
 ## Pushing to GitHub
@@ -256,7 +258,7 @@ belongs to Rowan University. It is used here for a class project.
 cd rowan-parking
 git init
 git add .
-git status          # check that config.py and data/db.json are NOT listed
+git status          # check that config.py and the data/*.json files are NOT listed
 git commit -m "Add parking recommendation app"
 git branch -M main
 git remote add origin https://github.com/YOUR-USERNAME/YOUR-REPO.git

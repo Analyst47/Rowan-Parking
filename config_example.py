@@ -12,13 +12,14 @@ Only this example file (with empty values) goes in the repo.
 the same names, for example GOOGLE_MAPS_KEY. Environment variables win.)
 """
 
-# Where to save users and parking lots: "local" or "jsonbin"
+# Where to save the two databases (users and parking lots): "local" or "jsonbin"
 # "local" works right away with no setup. Switch to "jsonbin" when you want
 # the data stored in your JSONBin bin instead.
 STORAGE = "local"
 
 # JSONBin settings (only used when STORAGE is "jsonbin")
-JSONBIN_BIN_ID = ""      # the ID of your bin
+JSONBIN_USERS_BIN_ID = ""    # the ID of the bin that holds the users
+JSONBIN_LOTS_BIN_ID = ""     # the ID of the bin that holds the parking lots
 JSONBIN_API_KEY = ""     # your X-Master-Key
 JSONBIN_BASE_URL = "https://api.jsonbin.io/v3"
 

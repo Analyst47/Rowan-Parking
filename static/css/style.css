@@ -11,22 +11,23 @@
 
 /* ---------- 1. Base ---------- */
 :root {
-    --brown: #54160c;
-    --brown-light: #7a3b30;
-    --red: #a31123;
-    --red-dark: #820d1c;
-    --gold: #f9d44a;
-    --cream: #fdf5d6;
+    --purple-dark: #2a1458;
+    --purple-light: #6d2fd6;
+    --purple-bright: #8b3df0;
+    --pink: #f0527a;
+    --cream: #f3edff;
 
-    --ink: #2a211f;
-    --muted: #675d59;
-    --line: #d9d1c3;
-    --page: #f4f0e8;
+    --ink: #1d1b2e;
+    --muted: #6b6880;
+    --line: #e6e1f0;
+    --page: #f7f5fc;
     --white: #fff;
 
-    --good: #2b7a3d;
-    --ok: #a85f00;
-    --low: #b3261e;
+    --good: #1f8a4d;
+    --ok:  #a97800;
+    --low: #c4243f;
+
+    --grad: linear-gradient(135deg, #8b3df0, #f0527a);
 
     --header-height: 92px;
     --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
@@ -64,7 +65,7 @@ select {
 }
 
 :focus-visible {
-    outline: 3px solid var(--gold);
+    outline: 3px solid var(--pink);
     outline-offset: 2px;
 }
 
@@ -76,9 +77,9 @@ select {
 /* ---------- 2. Header ---------- */
 .site-header {
     height: var(--header-height);
-    background: var(--brown);
+    background: var(--purple-dark);
     color: var(--white);
-    border-bottom: 4px solid var(--gold);
+    border-bottom: 4px solid var(--pink);
 }
 
 .header-inner {
@@ -96,7 +97,7 @@ select {
     font-size: 12px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--gold);
+    color: var(--pink);
 }
 
 .brand h1 {
@@ -107,7 +108,7 @@ select {
 .brand-tagline {
     margin-top: 2px;
     font-size: 13px;
-    color: #e8d9d4;
+    color: #d9ccf5;
 }
 
 .auth-area {
@@ -168,19 +169,21 @@ select {
 }
 
 .btn-primary {
-    background: var(--red);
+    background: var(--purple-bright);
     color: var(--white);
 }
 .btn-primary:hover:not(:disabled) {
-    background: var(--red-dark);
+    background: var(--purple-light);
 }
 
-.btn-gold {
-    background: var(--gold);
-    color: var(--brown);
+.btn-gold,
+.btn-pink {
+    background: var(--pink);
+    color: var(--purple-dark);
 }
-.btn-gold:hover {
-    background: #ffe27a;
+.btn-gold:hover,
+.btn-pink:hover {
+    background: #ff7a9a;
 }
 
 .btn-outline-light {
@@ -197,11 +200,11 @@ select {
     font-size: 13px;
     background: var(--white);
     border-color: var(--line);
-    color: var(--brown);
+    color: var(--purple-dark);
 }
 .btn-small:hover {
     background: var(--cream);
-    border-color: var(--brown-light);
+    border-color: var(--purple-light);
 }
 
 .btn-danger {
@@ -212,7 +215,7 @@ select {
     padding: 0;
     border: 0;
     background: none;
-    color: var(--red);
+    color: var(--purple-bright);
     font-weight: 600;
     text-decoration: underline;
     cursor: pointer;
@@ -239,12 +242,12 @@ select {
     cursor: pointer;
 }
 .tab:hover {
-    color: var(--brown);
+    color: var(--purple-dark);
 }
 .tab.is-active {
     background: var(--white);
-    color: var(--brown);
-    border-bottom-color: var(--red);
+    color: var(--purple-dark);
+    border-bottom-color: var(--purple-bright);
 }
 
 .panel {
@@ -256,7 +259,7 @@ select {
 
 .panel h2 {
     font-size: 24px;
-    color: var(--brown);
+    color: var(--purple-dark);
 }
 
 .hint {
@@ -294,7 +297,7 @@ input[type='password'],
 select {
     width: 100%;
     padding: 9px 10px;
-    border: 1px solid #b9b0a1;
+    border: 1px solid #b7aed1;
     border-radius: 4px;
     background: var(--white);
     font-size: 14px;
@@ -303,8 +306,8 @@ select {
 input:focus,
 select:focus {
     outline: none;
-    border-color: var(--brown);
-    box-shadow: 0 0 0 3px rgba(249, 212, 74, 0.7);
+    border-color: var(--purple-dark);
+    box-shadow: 0 0 0 3px rgba(240, 82, 122, 0.35);
 }
 
 .field-note {
@@ -316,11 +319,11 @@ select:focus {
 .form-error {
     margin: 12px 0;
     padding: 9px 11px;
-    border: 1px solid #e3b4ae;
+    border: 1px solid #efb3c0;
     border-left: 4px solid var(--low);
-    background: #fdf0ee;
+    background: #fdeef2;
     font-size: 13px;
-    color: #7d1f17;
+    color: #7d1230;
 }
 
 
@@ -329,7 +332,7 @@ select:focus {
     margin-top: 20px;
     padding: 16px 18px 18px;
     border: 1px solid var(--line);
-    border-left: 5px solid var(--gold);
+    border-left: 5px solid var(--pink);
     background: var(--cream);
 }
 
@@ -338,13 +341,13 @@ select:focus {
     font-weight: 700;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: var(--brown-light);
+    color: var(--purple-light);
 }
 
 .result-lot {
     margin: 4px 0 2px;
     font-size: 30px;
-    color: var(--brown);
+    color: var(--purple-dark);
 }
 
 .result-chance {
@@ -365,7 +368,7 @@ select:focus {
 .meter {
     height: 8px;
     margin-top: 8px;
-    background: #e6dfd0;
+    background: #e6e1f0;
 }
 .meter-fill {
     height: 100%;
@@ -406,7 +409,7 @@ select:focus {
 }
 .lot-row.is-selected {
     background: var(--cream);
-    box-shadow: inset 4px 0 0 var(--gold);
+    box-shadow: inset 4px 0 0 var(--pink);
 }
 .lot-row .meter {
     margin: 0;
@@ -429,7 +432,7 @@ select:focus {
     margin-bottom: 10px;
     padding: 12px 14px;
     border: 1px solid var(--line);
-    border-left: 5px solid #c9bfae;
+    border-left: 5px solid #cbc3e0;
     background: var(--white);
 }
 .day-card h3 {
@@ -452,7 +455,7 @@ select:focus {
     font-family: var(--font-heading);
     font-size: 19px;
     font-weight: 700;
-    color: var(--brown);
+    color: var(--purple-dark);
 }
 .day-class {
     font-size: 13px;
@@ -504,7 +507,7 @@ select:focus {
 }
 .view-button {
     padding: 7px 14px;
-    border: 1px solid #b9b0a1;
+    border: 1px solid #b7aed1;
     background: var(--white);
     font-size: 13px;
     font-weight: 600;
@@ -519,8 +522,8 @@ select:focus {
     border-radius: 0 4px 4px 0;
 }
 .view-button.is-active {
-    background: var(--brown);
-    border-color: var(--brown);
+    background: var(--purple-dark);
+    border-color: var(--purple-dark);
     color: var(--white);
 }
 
@@ -545,8 +548,8 @@ select:focus {
 .legend-chances .key:not(:first-child) {
     margin-left: 10px;
 }
-.key-lot      { background: var(--brown); }
-.key-selected { background: var(--gold); border: 1px solid var(--brown); }
+.key-lot      { background: var(--purple-dark); }
+.key-selected { background: var(--pink); border: 1px solid var(--purple-dark); }
 .key-good     { background: var(--good); }
 .key-ok       { background: #d58a1c; }
 .key-low      { background: var(--low); }
@@ -567,7 +570,7 @@ select:focus {
     position: absolute;
     inset: 0;
     overflow: hidden;
-    background: #e8e4da;
+    background: #ebe7f4;
     cursor: grab;
     touch-action: none;             /* we handle dragging and pinching ourselves */
 }
@@ -599,7 +602,7 @@ select:focus {
     display: flex;
     flex-direction: column;
     background: var(--white);
-    border: 1px solid #8f8678;
+    border: 1px solid #8a82a3;
     border-radius: 4px;
     overflow: hidden;
 }
@@ -624,7 +627,7 @@ select:focus {
 .google-map {
     position: absolute;
     inset: 0;
-    background: #e8e4da;
+    background: #ebe7f4;
 }
 
 .map-note {
@@ -634,7 +637,7 @@ select:focus {
     right: 60px;
     z-index: 2;
     padding: 9px 12px;
-    border: 1px solid #d8c36a;
+    border: 1px solid #c9b3f0;
     background: var(--cream);
     font-size: 13px;
 }
@@ -651,7 +654,7 @@ select:focus {
 .map-message strong {
     font-family: var(--font-heading);
     font-size: 20px;
-    color: var(--brown);
+    color: var(--purple-dark);
 }
 
 .map-footer {
@@ -693,7 +696,7 @@ select:focus {
     padding: 4px 8px;
     border: 2px solid var(--white);
     border-radius: 4px;
-    background: var(--brown);
+    background: var(--purple-dark);
     font-size: 13px;
     font-weight: 700;
     line-height: 1.2;
@@ -702,12 +705,12 @@ select:focus {
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.55);
 }
 .pin:hover .pin-name {
-    background: var(--red);
+    background: var(--purple-bright);
 }
 .pin.is-selected .pin-name {
-    background: var(--gold);
-    border-color: var(--brown);
-    color: var(--brown);
+    background: var(--pink);
+    border-color: var(--purple-dark);
+    color: var(--purple-dark);
     transform: scale(1.12);
 }
 
@@ -740,8 +743,8 @@ select:focus {
     width: max-content;
     max-width: 230px;
     padding: 7px 10px;
-    border: 1px solid var(--brown);
-    border-left: 4px solid var(--gold);
+    border: 1px solid var(--purple-dark);
+    border-left: 4px solid var(--pink);
     background: var(--white);
     text-align: left;
     font-size: 12px;
@@ -753,7 +756,7 @@ select:focus {
 .pin-callout strong {
     font-family: var(--font-heading);
     font-size: 14px;
-    color: var(--brown);
+    color: var(--purple-dark);
 }
 
 .info {
@@ -771,13 +774,13 @@ dialog {
     width: min(430px, calc(100vw - 32px));
     padding: 0;
     border: 0;
-    border-top: 5px solid var(--gold);
+    border-top: 5px solid var(--pink);
     border-radius: 4px;
     background: var(--white);
-    box-shadow: 0 12px 40px rgba(20, 5, 3, 0.5);
+    box-shadow: 0 12px 40px rgba(20, 8, 40, 0.5);
 }
 dialog::backdrop {
-    background: rgba(30, 10, 8, 0.6);
+    background: rgba(30, 12, 60, 0.6);
 }
 
 .dialog-form {
@@ -786,7 +789,7 @@ dialog::backdrop {
 }
 .dialog-form h2 {
     font-size: 24px;
-    color: var(--brown);
+    color: var(--purple-dark);
 }
 .dialog-close {
     position: absolute;
@@ -818,9 +821,9 @@ dialog::backdrop {
     z-index: 50;
     max-width: calc(100vw - 32px);
     padding: 11px 18px;
-    border-left: 5px solid var(--gold);
+    border-left: 5px solid var(--pink);
     border-radius: 3px;
-    background: var(--brown);
+    background: var(--purple-dark);
     font-size: 14px;
     color: var(--white);
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
@@ -837,7 +840,7 @@ dialog::backdrop {
 .noscript {
     padding: 14px;
     text-align: center;
-    background: #fdf0ee;
+    background: #fdeef2;
 }
 
 
@@ -933,8 +936,8 @@ dialog::backdrop {
     cursor: pointer;
 }
 .day-chip.is-on {
-    border-color: var(--brown);
-    background: var(--brown);
+    border-color: var(--purple-dark);
+    background: var(--purple-dark);
     color: var(--white);
 }
 .row-remove {
@@ -960,7 +963,7 @@ dialog::backdrop {
 }
 .needs-attention {
     border-color: var(--low);
-    box-shadow: 0 0 0 2px rgba(179, 38, 30, 0.25);
+    box-shadow: 0 0 0 2px rgba(196, 36, 63, 0.25);
 }
 .import-note,
 .import-warning {
@@ -975,7 +978,7 @@ dialog::backdrop {
 .result-heading {
     margin: 18px 0 8px;
     font-size: 20px;
-    color: var(--brown);
+    color: var(--purple-dark);
 }
 .plan-card {
     margin-bottom: 12px;
@@ -988,7 +991,7 @@ dialog::backdrop {
 .plan-card.plan-ok   { border-left-color: var(--ok); }
 .plan-card.plan-low  { border-left-color: var(--low); }
 .plan-card.is-selected {
-    box-shadow: 0 0 0 2px var(--gold);
+    box-shadow: 0 0 0 2px var(--pink);
 }
 .plan-header {
     display: flex;
@@ -1004,7 +1007,7 @@ dialog::backdrop {
 .plan-lot {
     margin: 4px 0 2px;
     font-size: 24px;
-    color: var(--brown);
+    color: var(--purple-dark);
 }
 .plan-facts {
     margin: 4px 0;
@@ -1014,7 +1017,7 @@ dialog::backdrop {
     margin: 6px 0;
     font-size: 14px;
     font-weight: 700;
-    color: var(--brown);
+    color: var(--purple-dark);
 }
 .plan-why {
     margin: 8px 0;
@@ -1025,7 +1028,7 @@ dialog::backdrop {
 .plan-tip {
     margin: 8px 0;
     padding: 6px 10px;
-    border-left: 3px solid var(--gold);
+    border-left: 3px solid var(--pink);
     background: var(--white);
     font-size: 12.5px;
     color: var(--muted);
@@ -1047,10 +1050,10 @@ dialog::backdrop {
     text-align: left;
     cursor: pointer;
 }
-.option-row:hover { border-color: var(--brown); }
+.option-row:hover { border-color: var(--purple-dark); }
 .option-row.is-selected {
-    border-color: var(--brown);
-    background: #fff8d6;
+    border-color: var(--purple-dark);
+    background: #f3edff;
 }
 .option-name { font-weight: 700; }
 .option-walk { color: var(--muted); }
@@ -1087,7 +1090,7 @@ dialog::backdrop {
     box-sizing: border-box;
     border: 2px solid var(--white);
     border-radius: 50%;
-    background: var(--red);
+    background: var(--purple-bright);
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
 }
 .building-pin-label {
@@ -1098,13 +1101,13 @@ dialog::backdrop {
     margin-top: 3px;
     padding: 1px 6px;
     border-radius: 3px;
-    background: var(--red);
+    background: var(--purple-bright);
     font-size: 11px;
     font-weight: 700;
     white-space: nowrap;
     color: var(--white);
 }
-.key-building { background: var(--red); border-radius: 50%; }
+.key-building { background: var(--purple-bright); border-radius: 50%; }
 
 /* result lists: no bullets, and the day label sits plainly in the header */
 .option-list { list-style: none; padding: 0; }
@@ -1120,4 +1123,4 @@ dialog::backdrop {
     color: inherit;
     cursor: pointer;
 }
-.plan-header h4 { margin: 0; font-family: var(--font-heading); font-size: 17px; color: var(--brown); }
+.plan-header h4 { margin: 0; font-family: var(--font-heading); font-size: 17px; color: var(--purple-dark); }

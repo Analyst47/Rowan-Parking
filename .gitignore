@@ -1,9 +1,9 @@
 # Your real keys live in config.py. NEVER commit it.
 config.py
 
-# Local database (contains users' hashed passwords) and the generated login secret
-data/db.json
-data/db.json.tmp
+# Local databases (users.json contains users' hashed passwords) and the generated login secret
+data/*.json
+data/*.tmp
 data/secret_key.txt
 
 # Python

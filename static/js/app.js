@@ -220,7 +220,7 @@ function renderAuthArea() {
         logout.addEventListener('click', handleLogout);
         area.appendChild(logout);
     } else {
-        const login = make('button', 'btn btn-gold', 'Login');
+        const login = make('button', 'btn btn-pink', 'Login');
         login.type = 'button';
         login.addEventListener('click', () => openDialog('login'));
 

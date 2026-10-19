@@ -1,16 +1,24 @@
 """
 storage.py
 
-Where the app keeps its data (users and parking lots).
+Where the app keeps its data. There are TWO databases, each its own JSON file:
+
+  users.json         the accounts and each person's saved weekly parking plan
+                     { "users": [ ... ] }
+  parking_lots.json  the commuter lots and their availability numbers
+                     { "modelVersion": 2, "parkingLots": [ ... ] }
+
 There are two options, picked with STORAGE in config.py:
 
-  "local"   - saves everything in data/db.json on the server. This is the
-              easiest way to start and needs no accounts or keys.
-  "jsonbin" - saves everything in a JSONBin.io bin, using your bin ID and
-              API key (this is the "separate backend" from the assignment).
+  "local"   - saves the two files in the data/ folder on the server. This is
+              the easiest way to start and needs no accounts or keys.
+  "jsonbin" - saves them in two JSONBin.io bins, using your two bin IDs and
+              your API key (this is the "separate backend" from the assignment).
 
 Both classes have the same two methods, load() and save(), so the rest of the
-code doesn't care which one is being used.
+code doesn't care which one is being used. load() puts the two databases
+together into one dictionary { "users": [...], "parkingLots": [...] }, and
+save() splits it up again into the two files.
 """
 
 import json
@@ -68,65 +76,132 @@ def fix_database_shape(db):
     return db, changed
 
 
+def split_database(db):
+    """Split the combined dictionary into the two documents we store."""
+    users_doc = {"users": db["users"]}
+    lots_doc = {"modelVersion": db.get("modelVersion"), "parkingLots": db["parkingLots"]}
+    return users_doc, lots_doc
+
+
+def join_database(users_doc, lots_doc):
+    """Put the two stored documents back together (and make sure they have the right shape)."""
+    users_doc = users_doc if isinstance(users_doc, dict) else {}
+    lots_doc = lots_doc if isinstance(lots_doc, dict) else {}
+    db = {
+        "users": users_doc.get("users"),
+        "parkingLots": lots_doc.get("parkingLots"),
+        "modelVersion": lots_doc.get("modelVersion"),
+    }
+    return fix_database_shape(db)
+
+
+def to_text(document):
+    return json.dumps(document, indent=2)
+
+
 class LocalStorage:
-    """Option 1: a JSON file on the server."""
+    """Option 1: two JSON files on the server."""
 
-    def __init__(self, path):
-        self.path = Path(path)
+    def __init__(self, folder):
+        self.users_path = Path(folder) / "users.json"
+        self.lots_path = Path(folder) / "parking_lots.json"
+        self.old_path = Path(folder) / "db.json"       # the single file older versions used
 
-    def load(self):
-        # First run: no file yet, so create one with the starting data
-        if not self.path.exists():
-            db = make_seed_data()
-            self.save(db)
-            return db
-
+    def read_file(self, path):
+        """Read one JSON file. Returns None if it doesn't exist yet."""
+        if not path.exists():
+            return None
         try:
-            db = json.loads(self.path.read_text(encoding="utf-8"))
+            return json.loads(path.read_text(encoding="utf-8"))
         except json.JSONDecodeError as error:
             # The file is damaged. We stop instead of overwriting it,
             # otherwise we would delete every user's account.
-            raise RuntimeError(f"{self.path} is not valid JSON") from error
+            raise RuntimeError(f"{path} is not valid JSON") from error
 
-        db, changed = fix_database_shape(db)
-        if changed:
+    def load(self):
+        users_doc = self.read_file(self.users_path)
+        lots_doc = self.read_file(self.lots_path)
+
+        # An older version kept everything in one file (data/db.json).
+        # Split it into the two new files the first time, so nobody loses their account.
+        if users_doc is None and lots_doc is None and self.old_path.exists():
+            old = self.read_file(self.old_path)
+            if isinstance(old, dict):
+                users_doc, lots_doc = split_database(fix_database_shape(old)[0])
+                self.write_file(self.users_path, users_doc)
+                self.write_file(self.lots_path, lots_doc)
+                os.replace(self.old_path, self.old_path.with_name("db.old.json"))
+
+        db, changed = join_database(users_doc, lots_doc)
+        # First run (a missing file) or a fix: save so the files are there next time
+        if changed or users_doc is None or lots_doc is None:
             self.save(db)
         return db
 
-    def save(self, db):
-        self.path.parent.mkdir(exist_ok=True)
+    def write_file(self, path, document):
+        path.parent.mkdir(exist_ok=True)
+        text = to_text(document)
+
+        # Only touch the file if something changed (saving a user shouldn't rewrite the lots)
+        if path.exists() and path.read_text(encoding="utf-8") == text:
+            return
 
         # Write to a temporary file first, then swap it in. That way a crash
         # in the middle of saving can't leave us with half a file.
-        temp = self.path.with_suffix(".json.tmp")
-        temp.write_text(json.dumps(db, indent=2), encoding="utf-8")
-        os.replace(temp, self.path)
+        temp = path.with_suffix(".json.tmp")
+        temp.write_text(text, encoding="utf-8")
+        os.replace(temp, path)
+
+    def save(self, db):
+        users_doc, lots_doc = split_database(db)
+        self.write_file(self.users_path, users_doc)
+        self.write_file(self.lots_path, lots_doc)
+
+
+# What we last read from / wrote to each JSONBin bin, so we can skip saving a bin that didn't change
+last_seen_bin_text = {}
 
 
 class JsonBinStorage:
     """
-    Option 2: a JSONBin.io bin.
+    Option 2: two JSONBin.io bins (one for users, one for parking lots).
 
     JSONBin docs: https://jsonbin.io/api-reference
-    We keep ONE bin that holds { "users": [...], "parkingLots": [...] }.
     """
 
-    def __init__(self, bin_id, api_key, base_url):
-        self.bin_id = bin_id
+    def __init__(self, users_bin_id, lots_bin_id, api_key, base_url):
+        self.users_bin_id = users_bin_id
+        self.lots_bin_id = lots_bin_id
         self.api_key = api_key
         self.base_url = base_url.rstrip("/")
 
-    def load(self):
-        answer = self.request("GET", f"/b/{self.bin_id}/latest")
-        db, changed = fix_database_shape(answer.get("record", {}))
+    def read_bin(self, bin_id):
+        answer = self.request("GET", f"/b/{bin_id}/latest")
+        record = answer.get("record", {})
+        last_seen_bin_text[bin_id] = to_text(record)
+        return record
 
-        # If the bin was empty (or the lots needed fixing), save so it's there next time
+    def write_bin(self, bin_id, document):
+        text = to_text(document)
+        if last_seen_bin_text.get(bin_id) == text:
+            return
+        self.request("PUT", f"/b/{bin_id}", document)
+        last_seen_bin_text[bin_id] = text
+
+    def load(self):
+        users_doc = self.read_bin(self.users_bin_id)
+        lots_doc = self.read_bin(self.lots_bin_id)
+        db, changed = join_database(users_doc, lots_doc)
+
+        # If a bin was empty (or the lots needed fixing), save so it's there next time
         if changed:
             self.save(db)
         return db
 
     def save(self, db):
-        self.request("PUT", f"/b/{self.bin_id}", db)
+        users_doc, lots_doc = split_database(db)
+        self.write_bin(self.users_bin_id, users_doc)
+        self.write_bin(self.lots_bin_id, lots_doc)
 
     def request(self, method, path, body=None):
         """Talk to the JSONBin API and return the answer as a dictionary."""
@@ -149,10 +224,11 @@ class JsonBinStorage:
 def get_storage():
     """Pick the right storage class based on config.py."""
     if get_setting("STORAGE", "local") == "jsonbin":
-        bin_id = get_setting("JSONBIN_BIN_ID", "")
+        users_bin = get_setting("JSONBIN_USERS_BIN_ID", "")
+        lots_bin = get_setting("JSONBIN_LOTS_BIN_ID", "")
         api_key = get_setting("JSONBIN_API_KEY", "")
-        if not bin_id or not api_key:
-            raise RuntimeError('STORAGE is "jsonbin" but the bin ID or API key is missing in config.py')
-        return JsonBinStorage(bin_id, api_key, get_setting("JSONBIN_BASE_URL", "https://api.jsonbin.io/v3"))
+        if not users_bin or not lots_bin or not api_key:
+            raise RuntimeError('STORAGE is "jsonbin" but the two bin IDs or the API key are missing in config.py')
+        return JsonBinStorage(users_bin, lots_bin, api_key, get_setting("JSONBIN_BASE_URL", "https://api.jsonbin.io/v3"))
 
-    return LocalStorage(DATA_FOLDER / "db.json")
+    return LocalStorage(DATA_FOLDER)
